@@ -1,12 +1,17 @@
 import os
 
+import jsonlines
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, jsonify
 from flask_basicauth import BasicAuth
 
 from main import Gmailer
 
 load_dotenv()
+
+COMPLAINTS_FILE = 'complaints.jsonl'
+with open(COMPLAINTS_FILE, 'a+') as COMPLAINTS_FILE_OBJ:
+    COMPLAINTS_FILE_OBJ.close()
 
 # NOTE: ALLOW LESS SECURE APPS IN GMAIL
 SECRET_EMAIL = os.getenv("SECRET_EMAIL")
@@ -31,3 +36,12 @@ def reply_unread_emails():
     gmailer = Gmailer(SECRET_EMAIL, SECRET_PWD)
     gmailer.reply_unread_emails()
     return "success"
+
+@app.route('/emails', methods=['GET'])
+@basic_auth.required
+def emails():
+    complaints_list = []
+    with jsonlines.open(COMPLAINTS_FILE, mode='r') as reader:
+        for obj in reader.iter(type=dict, skip_empty=True, skip_invalid=True):
+            complaints_list.append(obj)
+    return jsonify(complaints_list)

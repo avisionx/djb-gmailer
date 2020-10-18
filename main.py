@@ -17,6 +17,8 @@ from helpers import ComplaintParser
 
 load_dotenv()
 
+COMPLAINTS_FILE = 'complaints.jsonl'
+
 # NOTE: ALLOW LESS SECURE APPS IN GMAIL
 SECRET_EMAIL = os.getenv("SECRET_EMAIL")
 SECRET_PWD = os.getenv("SECRET_PWD")
@@ -101,7 +103,7 @@ class Gmailer:
         
         if not redressal:
             complaint_params.update(original)
-            with jsonlines.open('complaints.jsonl', mode='a') as writer:
+            with jsonlines.open(COMPLAINTS_FILE, mode='a') as writer:
                 writer.write(complaint_params)
 
     def reply_unread_emails(self):
