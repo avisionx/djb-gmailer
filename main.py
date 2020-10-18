@@ -17,15 +17,15 @@ from Helpers import ComplaintParser
 load_dotenv()
 
 # NOTE: ALLOW LESS SECURE APPS IN GMAIL
-SECRET_EMAIL  = os.getenv("SECRET_EMAIL")
-SECRET_PWD  = os.getenv("SECRET_PWD")
+SECRET_EMAIL = os.getenv("SECRET_EMAIL")
+SECRET_PWD = os.getenv("SECRET_PWD")
 
 
 class Gmailer:
-    
+
     IMAP_SERVER = "imap.gmail.com"
     SMTP_SERVER = "smtp.gmail.com"
-    
+
     def __init__(self, email, pwd):
         self.email = email
         self.pwd = pwd
@@ -42,7 +42,7 @@ class Gmailer:
         email_from = msg['From']
         email_subject = msg['Subject']
         email_datetime = email.utils.parsedate_to_datetime(msg["Date"])
-        
+
         email_date = email_datetime.strftime("%d/%m/%Y")
         email_time = email_datetime.strftime("%H:%M:%S")
 
@@ -57,13 +57,13 @@ class Gmailer:
                 except:
                     pass
                 if content_type == "text/plain" and "attachment" not in content_disposition:
-                    email_body += body       
+                    email_body += body
         else:
             content_type = msg.get_content_type()
             body = msg.get_payload(decode=True).decode()
             if content_type == "text/plain":
                 email_body += body
-        
+
         return {
             'id': id,
             'email_from': email_from,
@@ -72,7 +72,6 @@ class Gmailer:
             'email_time': email_time,
             'email_body': email_body
         }
-
 
     def __create_auto_reply(self, original, redressal=False):
         mail = MIMEMultipart('alternative')
@@ -90,29 +89,31 @@ class Gmailer:
     def __replyToEmail(self, original):
         redressal = True
         complaintParser = ComplaintParser()
-        complaint_params, redressal = complaintParser.parse(original['email_body'])
+        complaint_params, redressal = complaintParser.parse(
+            original['email_body'])
         with smtplib.SMTP_SSL(self.SMTP_SERVER) as conn:
             conn.login(self.email, self.pwd)
             conn.sendmail(
-            self.email, 
-            [original['email_from']],
-            self.__create_auto_reply(original, redressal).as_bytes()
-        )
+                self.email,
+                [original['email_from']],
+                self.__create_auto_reply(original, redressal).as_bytes()
+            )
         # TODO: DUMP TO DB COMPLAINT IT NOT REDRESSAL
 
     def reply_unread_emails(self):
 
         conn = imaplib.IMAP4_SSL(self.IMAP_SERVER)
-        
+
         try:
             (retcode, capabilities) = conn.login(self.email, self.pwd)
         except:
             print(sys.exc_info()[1])
             sys.exit(1)
 
-        conn.select() 
-        (retcode, messages) = conn.search(None, 'X-GM-RAW', r'"in:inbox is:unread"')
-        
+        conn.select()
+        (retcode, messages) = conn.search(
+            None, 'X-GM-RAW', r'"in:inbox is:unread"')
+
         if(retcode == 'OK'):
             messageList = map(int, messages[0].split())
             for uid in messageList:
@@ -122,7 +123,8 @@ class Gmailer:
                         msg = email.message_from_bytes(response_part[1])
                         originalEmailData = self.__getOriginalEmailData(msg)
                         self.__replyToEmail(originalEmailData)
-                typ, data = conn.store(str(uid), '+X-GM-LABELS','replied')
+                typ, data = conn.store(str(uid), '+X-GM-LABELS', 'replied')
+
 
 if __name__ == "__main__":
     gmailer = Gmailer(SECRET_EMAIL, SECRET_PWD)
