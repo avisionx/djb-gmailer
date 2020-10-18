@@ -10,8 +10,9 @@ from email.mime.text import MIMEText
 from email.utils import make_msgid
 from textwrap import dedent
 
-from dateutil import tz
 from dotenv import load_dotenv
+
+from Helpers import ComplaintParser
 
 load_dotenv()
 
@@ -88,6 +89,8 @@ class Gmailer:
 
     def __replyToEmail(self, original):
         redressal = True
+        complaintParser = ComplaintParser()
+        complaint_params, redressal = complaintParser.parse(original['email_body'])
         with smtplib.SMTP_SSL(self.SMTP_SERVER) as conn:
             conn.login(self.email, self.pwd)
             conn.sendmail(
@@ -95,6 +98,7 @@ class Gmailer:
             [original['email_from']],
             self.__create_auto_reply(original, redressal).as_bytes()
         )
+        # TODO: DUMP TO DB COMPLAINT IT NOT REDRESSAL
 
     def reply_unread_emails(self):
 
