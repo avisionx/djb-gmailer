@@ -10,6 +10,7 @@ from email.mime.text import MIMEText
 from email.utils import make_msgid
 from textwrap import dedent
 
+import jsonlines
 from dotenv import load_dotenv
 
 from helpers import ComplaintParser
@@ -99,7 +100,9 @@ class Gmailer:
             )
         
         if not redressal:
-            print(complaint_params, original)
+            complaint_params.update(original)
+            with jsonlines.open('complaints.jsonl', mode='a') as writer:
+                writer.write(complaint_params)
 
     def reply_unread_emails(self):
 
