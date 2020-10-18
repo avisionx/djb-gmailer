@@ -23,7 +23,7 @@ class ComplaintParser:
         }
         for key in self.keyList.keys():
             body = body.replace(key, "||"+key)
-
+            
         keysToFind = list(self.keyList.keys())
         issueDump = ""
         for data in body.split("||"):
@@ -56,6 +56,6 @@ class ComplaintParser:
 
 if __name__ == "__main__":
     complaintParser = ComplaintParser()
-    print(complaintParser.parse(''' NAME: Ram gopal shashtri 
-    ADDRESS: Plot no. 9(GF) Roshan garden, Najafagarh park 110043CONTACT NO.:9319525030 
+    print(complaintParser.parse('''NAME: Ram gopal shashtri
+    ADDRESS: Plot no. 9(GF) Roshan garden, Najafagarh park 110043CONTACT NO.:9319525030
     KNO:6536662086 ISSUE: I have facing problem regardin g new Meter connection and it's been more than 2 Month's kindly resolve my issue asap'''))

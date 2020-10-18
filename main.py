@@ -87,7 +87,6 @@ class Gmailer:
         return mail
 
     def __replyToEmail(self, original):
-        redressal = True
         complaintParser = ComplaintParser()
         complaint_params, redressal = complaintParser.parse(
             original['email_body'])
@@ -98,7 +97,9 @@ class Gmailer:
                 [original['email_from']],
                 self.__create_auto_reply(original, redressal).as_bytes()
             )
-        # TODO: DUMP TO DB COMPLAINT IT NOT REDRESSAL
+        
+        if not redressal:
+            print(complaint_params, original)
 
     def reply_unread_emails(self):
 
@@ -115,7 +116,7 @@ class Gmailer:
             None, 'X-GM-RAW', r'"in:inbox is:unread"')
 
         if(retcode == 'OK'):
-            messageList = map(int, messages[0].split())
+            messageList = list(map(int, messages[0].split()))
             for uid in messageList:
                 typ, data = conn.fetch(str(uid), '(RFC822)')
                 for response_part in data:
