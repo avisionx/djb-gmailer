@@ -27,7 +27,7 @@ app.config['BASIC_AUTH_PASSWORD'] = BASIC_AUTH_PASSWORD
 basic_auth = BasicAuth(app)
 
 # Create a cron job like so crontab -e add this username and password from .env
-# * * * * * /opt/local/bin/curl -X GET https://falken:joshua@YOUR_APP/cron/do_the_thing
+# * * * * * /opt/local/bin/curl -X GET https://falken:joshua@YOUR_WEB_LINK/cron/email
 @app.route('/cron/email', methods=['GET'])
 @basic_auth.required
 def reply_unread_emails():
