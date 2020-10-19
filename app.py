@@ -10,8 +10,6 @@ from main import Gmailer
 load_dotenv()
 
 COMPLAINTS_FILE = 'complaints.jsonl'
-with open(COMPLAINTS_FILE, 'a+') as COMPLAINTS_FILE_OBJ:
-    COMPLAINTS_FILE_OBJ.close()
 
 # NOTE: ALLOW LESS SECURE APPS IN GMAIL
 SECRET_EMAIL = os.getenv("SECRET_EMAIL")
@@ -26,11 +24,16 @@ app.config['BASIC_AUTH_PASSWORD'] = BASIC_AUTH_PASSWORD
 
 basic_auth = BasicAuth(app)
 
+def createFileIfNotExist(filename):
+    with open(filename, 'a+') as outfile:
+        outfile.close()
+
 # Create a cron job like so crontab -e add this username and password from .env
 # * * * * * /opt/local/bin/curl -X GET https://falken:joshua@YOUR_WEB_LINK/cron/email
 @app.route('/cron/email', methods=['GET'])
 @basic_auth.required
 def reply_unread_emails():
+    createFileIfNotExist(COMPLAINTS_FILE)
     gmailer = Gmailer(SECRET_EMAIL, SECRET_PWD)
     gmailer.reply_unread_emails()
     return "success"
@@ -38,8 +41,11 @@ def reply_unread_emails():
 @app.route('/emails', methods=['GET'])
 @basic_auth.required
 def emails():
+    createFileIfNotExist(COMPLAINTS_FILE)
     complaints_list = []
     with jsonlines.open(COMPLAINTS_FILE, mode='r') as reader:
         for obj in reader.iter(type=dict, skip_empty=True, skip_invalid=True):
             complaints_list.append(obj)
+    if os.path.exists(COMPLAINTS_FILE):
+        os.remove(COMPLAINTS_FILE)
     return jsonify(complaints_list)
