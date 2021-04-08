@@ -1,6 +1,7 @@
 import os
 
 import jsonlines
+import requests
 from dotenv import load_dotenv
 from flask import Flask, jsonify
 from flask_basicauth import BasicAuth
@@ -24,19 +25,27 @@ app.config['BASIC_AUTH_PASSWORD'] = BASIC_AUTH_PASSWORD
 
 basic_auth = BasicAuth(app)
 
+
 def createFileIfNotExist(filename):
     with open(filename, 'a+') as outfile:
         outfile.close()
 
 # Create a cron job like so crontab -e add this username and password from .env
 # * * * * * /opt/local/bin/curl -X GET https://falken:joshua@YOUR_WEB_LINK/cron/email
+
+
 @app.route('/cron/email', methods=['GET'])
 @basic_auth.required
 def reply_unread_emails():
+    reply_redressal_url = 'https://jsonplaceholder.typicode.com/posts/1'
+    reply_main_url = 'https://jsonplaceholder.typicode.com/posts/2'
+    reply_redressal = requests.get(reply_redressal_url).json()['body']
+    reply_main = requests.get(reply_main_url).json()['body']
     createFileIfNotExist(COMPLAINTS_FILE)
     gmailer = Gmailer(SECRET_EMAIL, SECRET_PWD)
-    gmailer.reply_unread_emails()
+    gmailer.reply_unread_emails(reply_main, reply_redressal)
     return "success"
+
 
 @app.route('/emails', methods=['GET'])
 @basic_auth.required

@@ -3,8 +3,6 @@ import imaplib
 import os
 import smtplib
 import sys
-import time
-from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import make_msgid
@@ -76,37 +74,45 @@ class Gmailer:
             'email_body': email_body
         }
 
-    def __create_auto_reply(self, original, redressal=False):
+    def __create_auto_reply(self, original, redressal=False, reply_body=None):
         mail = MIMEMultipart('alternative')
         mail['Message-ID'] = make_msgid()
         mail['References'] = mail['In-Reply-To'] = original['id']
         mail['Subject'] = 'Re: ' + original['email_subject']
         mail['From'] = self.email
         mail['To'] = original['email_from']
+        if reply_body:
+            mail.attach(MIMEText(dedent(reply_body), 'plain'))
+            return mail
         if redressal:
             mail.attach(MIMEText(dedent(self.body_redressal), 'plain'))
         else:
             mail.attach(MIMEText(dedent(self.body_main), 'plain'))
         return mail
 
-    def __replyToEmail(self, original):
+    def __replyToEmail(self, original, reply_main=None, reply_redressal=None):
         complaintParser = ComplaintParser()
         complaint_params, redressal = complaintParser.parse(
             original['email_body'])
         with smtplib.SMTP_SSL(self.SMTP_SERVER) as conn:
             conn.login(self.email, self.pwd)
+            if redressal:
+                reply_body = reply_redressal
+            else:
+                reply_body = reply_main
             conn.sendmail(
                 self.email,
                 [original['email_from']],
-                self.__create_auto_reply(original, redressal).as_bytes()
+                self.__create_auto_reply(
+                    original, redressal, reply_body).as_bytes()
             )
-        
+
         if not redressal:
             complaint_params.update(original)
             with jsonlines.open(COMPLAINTS_FILE, mode='a') as writer:
                 writer.write(complaint_params)
 
-    def reply_unread_emails(self):
+    def reply_unread_emails(self, reply_main=None, reply_redressal=None):
 
         conn = imaplib.IMAP4_SSL(self.IMAP_SERVER)
 
@@ -128,7 +134,8 @@ class Gmailer:
                     if isinstance(response_part, tuple):
                         msg = email.message_from_bytes(response_part[1])
                         originalEmailData = self.__getOriginalEmailData(msg)
-                        self.__replyToEmail(originalEmailData)
+                        self.__replyToEmail(
+                            originalEmailData, reply_main, reply_redressal)
                 typ, data = conn.store(str(uid), '+X-GM-LABELS', 'replied')
 
 
